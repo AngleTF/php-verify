@@ -1,0 +1,12 @@
+{
+    "name": "tf/verify",
+    "description": "verify class",
+    "type": "e.g. library",
+    "authors": [
+        {
+            "name": "taolifeng",
+            "email": "742592958@qq.com"
+        }
+    ],
+    "require": {}
+}
