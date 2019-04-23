@@ -84,6 +84,7 @@ if(!$check->checkParams($_POST, ['name', 'age', 'money'], $args)){
 #按照规则的顺序返回
 list($name, $age, $money) = $args;
 
+#string(3) "age", int(23), double(0)
 var_dump($name, $age, $money);
 ```
 
