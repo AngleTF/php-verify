@@ -1,3 +1,8 @@
+### 安装
+```
+composer require angletf/php-verify
+```
+
 ### 引入自动加载和命名空间
 ```php
 include_once "../vendor/autoload.php";
