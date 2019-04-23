@@ -1,5 +1,6 @@
 <?php
 
+namespace angletf\types;
 
 class VerifyString
 {

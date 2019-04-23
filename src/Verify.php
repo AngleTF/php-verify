@@ -15,10 +15,6 @@
 
 namespace angletf;
 
-
-use Nette\Utils\Callback;
-use PhpOffice\PhpSpreadsheet\Calculation\Functions;
-
 class Verify
 {
 
@@ -95,9 +91,7 @@ class Verify
                 throw new \Exception("Unknown validation model");
             }
 
-            $class_name = 'Verify' . ucfirst($type);
-            include_once __DIR__ . "/types/" . $class_name . '.php';
-
+            $class_name = __NAMESPACE__ . '\types\Verify' . ucfirst($type);
 
             $rule = self::$rule[$k];
 

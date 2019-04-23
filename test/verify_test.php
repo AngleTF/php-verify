@@ -12,14 +12,15 @@
  *  |
  *  +--------------------------------------------------------------+
  */
-include_once "../src/Verify.php";
+
+include_once "../vendor/autoload.php";
 
 use angletf\Verify;
 
 $_POST = [
     'name' => 'age',
     'age' => '23',
-    'money' => '100.1'
+    //'money' => '100.1'
 ];
 
 $rule = [
@@ -39,6 +40,7 @@ $rule = [
         'type' => 'int',
         'max' => 50,
         'min' => 0,
+        'default' => 1,
         'error' => [
             'lack' => '没有age参数',
             'type' => 'age类型不匹配',
@@ -50,6 +52,7 @@ $rule = [
         'type' => 'float',
         'max' => 500,
         'min' => 0,
+        'default' => 0.0,
         'error' => [
             'lack' => '没有money参数',
             'type' => 'money类型不匹配',
