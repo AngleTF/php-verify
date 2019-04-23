@@ -36,13 +36,28 @@ class Verify
      */
     public $defaultKey = [];
 
+    /**
+     * 需要忽略的方法名
+     * @var array
+     */
     private $ignore = ['error', 'type', 'default'];
+
     /**
      * 支持的验证类型
      * @var array
      */
     public $supportVerifyTypes = ['string', 'int', 'float'];
 
+    /**
+     * 等待验证的参数
+     * @var array
+     */
+    public $verifyParams = [];
+
+    public function __construct($verify)
+    {
+        $this->verifyParams = $verify;
+    }
 
     public static function registerRule($rule = [])
     {
@@ -50,15 +65,15 @@ class Verify
     }
 
     /**
-     * @param array $verify 等待验证的参数
+     * 验证参数
      * @param array $params 需要验证的参数
      * @param array $args 返回的参数
-     * @param callable $err_callback
      * @return bool
      * @throws \Exception
      */
-    public function checkParams($verify, $params, &$args)
+    public function checkParams($params, &$args)
     {
+        $verify = $this->verifyParams;
 
         if (count(array_diff($params, array_keys(self::$rule))) != 0) {
             throw new \Exception('Please register the rules');
@@ -120,24 +135,6 @@ class Verify
         $args = $validated;
 
         return true;
-    }
-
-    private function mergeDefaultParams($verify, $params)
-    {
-        $default = [];
-
-        foreach ($params as $k => $v) {
-            if (is_string($v)) {
-                $param[$k] = self::$rule[$v];
-            }
-
-            if (is_array($v)) {
-                !isset($v['default']) ?: $default[$k] = $v['default'];
-            }
-
-        }
-
-        return array_merge($default, $verify);
     }
 
     public function getError()

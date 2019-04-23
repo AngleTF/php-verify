@@ -65,9 +65,9 @@ $rule = [
 
 Verify::registerRule($rule);
 
-$check = new Verify();
+$check = new Verify($_POST);
 
-if(!$check->checkParams($_POST, ['name', 'age', 'money'], $args)){
+if(!$check->checkParams(['name', 'age', 'money'], $args)){
     echo $check->getError();
     return;
 }

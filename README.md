@@ -77,12 +77,12 @@ $_POST = [
     //'money' => '100' 使用默认值
 ];
 
-$check = new Verify();
+#传入需要验证的值
+$check = new Verify($_POST);
 
-#第一个参数是请求的键值对
-#第二参数是使用的规则, 同时也是需要验证的参数值, 第三个参数则是 正确后返回的参数
-#返回值是bool
-if(!$check->checkParams($_POST, ['name', 'age', 'money'], $args)){
+#第一个参数是使用的规则, 同时也是需要验证的参数值, 第二个参数则是 正确后返回的参数
+#返回值是bool, 代表验证是否成功
+if(!$check->checkParams(['name', 'age', 'money'], $args)){
     #验证失败, 获取用户自定义的报错信息
     echo $check->getError();
     return;
