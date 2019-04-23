@@ -1,12 +1,16 @@
 {
-    "name": "tf/verify",
-    "description": "verify class",
-    "type": "e.g. library",
+    "name": "angletf/php-verify",
+    "description": "php verify class",
     "authors": [
         {
             "name": "taolifeng",
             "email": "742592958@qq.com"
         }
     ],
-    "require": {}
+    "require": {},
+	"autoload": {
+        "psr-4": {
+            "angletf\\Verify\\": "src/"
+        }
+    }
 }
