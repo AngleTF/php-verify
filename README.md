@@ -7,6 +7,7 @@ use angletf\Verify;
 ### 注册参数规则
 
 **规则名&参数名**
+
 name, age, money 分别是规则名, 也是参数名, 其中规则下的type, error中的lack和type都是必填字段,
 type目前仅支持 `string`, `int`, `float`
 
@@ -16,6 +17,7 @@ type目前仅支持 `string`, `int`, `float`
 3. type为int类型可以使用`min`, `max`, `default`
 
 **错误信息返回**
+
 error是数组对应匹配规则报错的自定义信息, 如果有匹配失败则返回某个规则的错误用户自定义信息
 
 ```php
