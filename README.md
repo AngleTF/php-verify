@@ -15,6 +15,7 @@ type目前仅支持 `string`, `int`, `float`
 2. type为float类型可以使用`min`, `max`, `default`
 3. type为int类型可以使用`min`, `max`, `default`
 
+**错误信息返回**
 error是数组对应匹配规则报错的自定义信息, 如果有匹配失败则返回某个规则的错误用户自定义信息
 
 ```php
