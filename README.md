@@ -1,4 +1,4 @@
-### 安装 (install)
+### 安装 (Install)
 ```
 composer require angletf/php-verify
 ```
@@ -127,7 +127,7 @@ The rule registration receives a two-dimensional array. The key is the name of t
 error是数组对应匹配规则报错的自定义信息, 如果有匹配失败则返回某个规则的错误用户自定义信息, 不限于字符串
 Error is the custom information reported by the array corresponding to the matching rule. If there is a matching failure, the error user custom information of a rule will be returned, which is not limited to strings
 
-**Verify方法 (Verify method) **
+**Verify方法 (Verify method)**
 
 |method|argument|
 |---|---|
