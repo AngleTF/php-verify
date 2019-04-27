@@ -1,10 +1,12 @@
 {
     "name": "angletf/php-verify",
-    "description": "php verify class",
+    "description": "php validate form data, support for regex and custom error returns",
     "authors": [
         {
             "name": "taolifeng",
-            "email": "742592958@qq.com"
+            "email": "742592958@qq.com",
+            "homepage": "http://angletf.github.io",
+            "role": "Developer"
         }
     ],
     "require": {},
@@ -12,5 +14,10 @@
         "psr-4": {
             "angletf\\": "src/"
         }
+    },
+    "license": "MIT",
+    "support": {
+        "email": "742592958@qq.com",
+        "issues": "https://github.com/AngleTF/php-verify/issues"
     }
 }
