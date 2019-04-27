@@ -46,7 +46,7 @@ class Verify
      * 支持的验证类型
      * @var array
      */
-    public $supportVerifyTypes = ['string', 'int', 'float'];
+    public $supportVerifyTypes = ['string', 'int', 'float', 'array'];
 
     /**
      * 等待验证的参数
@@ -164,6 +164,12 @@ class Verify
                     return false;
                 }
                 $filter_val = $filter_var;
+                break;
+            case 'array':
+                if (!is_array($verify_val)) {
+                    return false;
+                }
+                $filter_val = $verify_val;
                 break;
         }
         return true;

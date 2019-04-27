@@ -1,42 +1,27 @@
-### 安装
+### 安装 (install)
 ```
 composer require angletf/php-verify
 ```
 
-### 引入自动加载和命名空间
+### 引入自动加载和命名空间 (Introduces automatic loading and namespaces)
 ```php
 include_once "../vendor/autoload.php";
 use angletf\Verify;
 ```
 
-### 注册参数规则
-
-**规则名&参数名**
-
-name, age, money 分别是规则名, 也是参数名, 其中规则下的type, error中的lack和type都是必填字段,
-type目前仅支持 `string`, `int`, `float`
-
-**type支持的参数**
-1. type为string类型可以使用`length`, `regex`, `default`
-2. type为float类型可以使用`min`, `max`, `default`
-3. type为int类型可以使用`min`, `max`, `default`
-
-**错误信息返回**
-
-error是数组对应匹配规则报错的自定义信息, 如果有匹配失败则返回某个规则的错误用户自定义信息
-
+### 注册规则 (Registration rules)
 ```php
 $rule = [
     'name' => [
-        'type' => 'string',                 //必须字段
-        'length' => 3,                      //该字符长度要求为3
-        'regex' => '/\w+/',                 //正则规则
-        'default' => 'tlf123',              //默认参数
+        'type' => 'string',                 //必须字段 Required fields
+        'length' => 3,                      //该字符长度要求为3 Character length requirement 3
+        'regex' => '/\w+/',                 //正则规则 Regex rules
+        'default' => 'tlf123',              //默认参数 default parameters
         'error' => [
-            'lack' => '没有name参数',         //必须字段
-            'type' => 'name类型不匹配',       //必须字段
-            'length' => 'name长度不符合',
-            'regex' => 'name正则匹配失败',
+            'lack' => 'no name argument',   //必须字段 Required fields
+            'type' => 'type mismatch',      //必须字段 Required fields
+            'length' => 'name length mismatch',
+            'regex' => 'regex mismatch',
         ],
     ],
     'age' => [
@@ -44,10 +29,10 @@ $rule = [
         'max' => 50,
         'min' => 0,
         'error' => [
-            'lack' => '没有age参数',
-            'type' => 'age类型不匹配',
-            'max' => 'age大于最大值',
-            'min' => 'age小于最小值',
+            'lack' => 'no age argument',
+            'type' => 'type mismatch',
+            'max' => 'over max age',
+            'min' => 'over min age',
         ],
     ],
     'money' => [
@@ -56,34 +41,44 @@ $rule = [
         'min' => 0,
         'default' =>0,
         'error' => [
-            'lack' => '没有money参数',
-            'type' => 'money类型不匹配',
-            'max' => 'money大于最大值',
-            'min' => 'money小于最小值',
+            'lack' => 'no money argument',
+            'type' => 'type mismatch',
+            'max' => 'over max money',
+            'min' => 'over min money',
         ],
-    ]
+    ],
+    'role' => [
+            'type' => 'array',
+            'count' => 3,
+            'error' => [
+                'lack' => 'no role argument',
+                'type' => 'type mismatch',
+                'count' => 'argument role count mismatch',
+            ],
+        ]
 ];
 
+#注册规则 (Registration rules)
 Verify::registerRule($rule);
 ```
 
-### 使用
+### 快速使用 (Quick to use)
 
 ```php
 #伪造一个post请求
 $_POST = [
     'name' => 'age',
     'age' => '23',
-    //'money' => '100' 使用默认值
+    'role' => [
+        1, 2, 3
+    ]
+    //'money' => '100' use default value
 ];
 
-#传入需要验证的值
 $check = new Verify($_POST);
 
-#第一个参数是使用的规则, 同时也是需要验证的参数值, 第二个参数则是 正确后返回的参数
-#返回值是bool, 代表验证是否成功
 if(!$check->checkParams(['name', 'age', 'money'], $args)){
-    #验证失败, 获取用户自定义的报错信息
+    #verify failure
     echo $check->getError();
     return;
 }
@@ -94,4 +89,48 @@ list($name, $age, $money) = $args;
 #string(3) "age", int(23), double(0)
 var_dump($name, $age, $money);
 ```
+
+### 注册规则参数说明 (Registration rule parameter specification)
+
+**规则名&参数名 (Rule name & parameter name)**
+
+规则注册接收一个二维数组, key是规则名 同时也是等待验证的参数名, error中的lack和type都是必填字段,
+The rule registration receives a two-dimensional array. The key is the name of the rule and also the parameter name to be verified. Lack and type in error are required fields.
+```php
+[
+    '规则名&验证参数名' => [
+        'type' => '变量类型(必填)',
+        '这个type支持所支持的规则' => '规则匹配值',
+        ...
+        'error' => [
+            'lack' => '这个参数缺失(必填)',
+            'type' => '这个类型不正确(必填)',
+            '对应的规则' => '错误返回的值'
+            ....
+        ]
+    ]   
+]
+```
+
+
+**type支持的类型 (type supported parameter values)**
+
+|type|可使用的规则名称|
+|---|---|
+|string|`length`, `regex`, `default`|
+|float|`min`, `max`, `default`|
+|int|`min`, `max`, `default`|
+|array|`count`|
+
+**错误信息返回 (return error message)**
+
+error是数组对应匹配规则报错的自定义信息, 如果有匹配失败则返回某个规则的错误用户自定义信息, 不限于字符串
+Error is the custom information reported by the array corresponding to the matching rule. If there is a matching failure, the error user custom information of a rule will be returned, which is not limited to strings
+
+**Verify方法 (Verify method) **
+
+|method|argument|
+|---|---|
+|Verify::registerRule|void Verify::registerRule ( array )|
+|Verify::checkParams|bool Verify::checkParams ( array, &array )|
 

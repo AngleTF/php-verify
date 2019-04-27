@@ -20,6 +20,9 @@ use angletf\Verify;
 $_POST = [
     'name' => 'age',
     'age' => '23',
+    'role' => [
+        1, 2, 3
+    ]
     //'money' => '100.1'
 ];
 
@@ -59,6 +62,15 @@ $rule = [
             'max' => 'money大于最大值',
             'min' => 'money小于最小值',
         ],
+    ],
+    'role' => [
+        'type' => 'array',
+        'count' => 3,
+        'error' => [
+            'lack' => '没有role参数',
+            'type' => 'role类型不匹配',
+            'count' => 'count数量不正确',
+        ],
     ]
 ];
 
@@ -67,12 +79,12 @@ Verify::registerRule($rule);
 
 $check = new Verify($_POST);
 
-if(!$check->checkParams(['name', 'age', 'money'], $args)){
+if(!$check->checkParams(['name', 'age', 'money', 'role'], $args)){
     echo $check->getError();
     return;
 }
 
-list($name, $age, $money) = $args;
+list($name, $age, $money, $role) = $args;
 
 //string(3) "age", int(23), double(0)
-var_dump($name, $age, $money);
+var_dump($name, $age, $money, $role);
