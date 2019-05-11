@@ -47,7 +47,7 @@ $rule = [
             'min' => 'over min money',
         ],
     ],
-    'role' => [
+    'roles' => [
             'type' => 'array',
             'count' => 3,
             'error' => [
@@ -67,27 +67,35 @@ Verify::registerRule($rule);
 ```php
 #伪造一个post请求
 $_POST = [
-    'name' => 'age',
+    'name' => 'tao',
     'age' => '23',
-    'role' => [
+    'roles' => [
         1, 2, 3
     ]
-    //'money' => '100' use default value
+    //'money' => '100.1'
 ];
 
 $check = new Verify($_POST);
 
-if(!$check->checkParams(['name', 'age', 'money'], $args)){
-    #verify failure
-    echo $check->getError();
-    return;
+try{
+    if(!$check->checkParams(['name', 'age', 'money', 'roles'], $args)){
+        echo $check->getError();
+        return;
+    }
+    
+    //按照checkParams的第一个参数数组的顺序返回
+    list($name, $age, $money, $roles) = $args;
+
+    //string(3) "tao"
+    //int(23)
+    //double(0)
+    //array(3) {...}
+    var_dump($name, $age, $money, $roles);
+
+}catch (\Exception $e){
+    //handle an exception
+    echo 'Exception: ' . $e->getMessage();
 }
-
-#按照规则的顺序返回
-list($name, $age, $money) = $args;
-
-#string(3) "age", int(23), double(0)
-var_dump($name, $age, $money);
 ```
 
 ### 注册规则参数说明 (Registration rule parameter specification)
