@@ -18,9 +18,9 @@ include_once "../vendor/autoload.php";
 use angletf\Verify;
 
 $_POST = [
-    'name' => 'age',
+    'name' => 'tao',
     'age' => '23',
-    'role' => [
+    'roles' => [
         1, 2, 3
     ]
     //'money' => '100.1'
@@ -28,15 +28,12 @@ $_POST = [
 
 $rule = [
     'name' => [
-        'type' => 'string',                  //必须字段
-        'length' => 3,
-        'regex' => '/\w+/',
-        'default' => 'tlf123',
+        'type' => 'string',
+        'regex' => '/.{2,10}/',
         'error' => [
-            'lack' => '没有name参数',          //必须字段
-            'type' => 'name类型不匹配',        //必须字段
-            'length' => 'name长度不符合',
-            'regex' => 'name正则匹配失败',
+            'lack' => 'name不存在',
+            'type' => '类型错误',
+            'regex' => '匹配失败',
         ],
     ],
     'age' => [
@@ -63,7 +60,7 @@ $rule = [
             'min' => 'money小于最小值',
         ],
     ],
-    'role' => [
+    'roles' => [
         'type' => 'array',
         'count' => 3,
         'error' => [
@@ -79,12 +76,23 @@ Verify::registerRule($rule);
 
 $check = new Verify($_POST);
 
-if(!$check->checkParams(['name', 'age', 'money', 'role'], $args)){
-    echo $check->getError();
-    return;
+try{
+    if(!$check->checkParams(['name', 'age', 'money', 'roles'], $args)){
+        echo $check->getError();
+        return;
+    }
+
+    list($name, $age, $money, $roles) = $args;
+
+    //string(3) "tao"
+    //int(23)
+    //double(0)
+    //array(3) {...}
+    var_dump($name, $age, $money, $roles);
+
+}catch (\Exception $e){
+    //handle an exception
+    echo 'Exception: ' . $e->getMessage();
 }
 
-list($name, $age, $money, $role) = $args;
 
-//string(3) "age", int(23), double(0)
-var_dump($name, $age, $money, $role);
