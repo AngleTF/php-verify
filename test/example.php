@@ -18,22 +18,26 @@ include_once "../vendor/autoload.php";
 use angletf\Verify;
 
 $_POST = [
-    'name' => 'tao',
+    'name' => ' tao ',
     'age' => '23',
     'roles' => [
         1, 2, 3
-    ]
+    ],
+    'password' => '11111111111111111111111111111111111111111111111111111111111111'
     //'money' => '100.1'
 ];
 
 $rule = [
     'name' => [
         'type' => 'string',
-        'regex' => '/.{2,10}/',
+        'regex' => '/^.{3}$/u',
         'error' => [
             'lack' => 'name不存在',
             'type' => '类型错误',
-            'regex' => '匹配失败',
+            'regex' => 'name匹配失败',
+        ],
+        'filter' => [
+            //'trim' => ['1']
         ],
     ],
     'age' => [
@@ -49,10 +53,10 @@ $rule = [
         ],
     ],
     'money' => [
-        'type' => 'float',
+        'type' => 'int',
         'max' => 500,
         'min' => 0,
-        'default' => 0.0,
+        'default' => 99,
         'error' => [
             'lack' => '没有money参数',
             'type' => 'money类型不匹配',
@@ -68,7 +72,7 @@ $rule = [
             'type' => 'role类型不匹配',
             'count' => 'count数量不正确',
         ],
-    ]
+    ],
 ];
 
 
@@ -88,7 +92,7 @@ try{
     //int(23)
     //double(0)
     //array(3) {...}
-    var_dump($name, $age, $money, $roles);
+    //var_dump($name, $age, $money, $roles);
 
 }catch (\Exception $e){
     //handle an exception

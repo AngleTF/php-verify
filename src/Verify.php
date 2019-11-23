@@ -40,7 +40,7 @@ class Verify
      * 需要忽略的方法名
      * @var array
      */
-    private $ignore = ['error', 'type', 'default'];
+    private $ignore = ['error', 'type', 'default', 'filter'];
 
     /**
      * 支持的验证类型
@@ -54,9 +54,16 @@ class Verify
      */
     public $verifyParams = [];
 
+    /**
+     * Filter 对象
+     * @var null
+     */
+    private $filter = null;
+
     public function __construct($verify)
     {
         $this->verifyParams = $verify;
+        $this->filter = new Filter();
     }
 
     public static function registerRule($rule = [])
@@ -105,6 +112,10 @@ class Verify
             if (!in_array($type, $this->supportVerifyTypes)) {
                 throw new \Exception("Unknown validation model");
             }
+
+            //过滤字符串参数
+            $this->filter->stringFilter($verify[$k],
+                isset(self::$rule[$k]['filter']) ? self::$rule[$k]['filter'] : []);
 
             $class_name = __NAMESPACE__ . '\types\Verify' . ucfirst($type);
 
