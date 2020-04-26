@@ -18,85 +18,61 @@ include_once "../vendor/autoload.php";
 use angletf\Verify;
 
 $_POST = [
-    'name' => ' tao ',
-    'age' => '23',
-    'roles' => [
-        1, 2, 3
-    ],
-    'password' => '11111111111111111111111111111111111111111111111111111111111111'
-    //'money' => '100.1'
+    'name' => 'tao',
+    'age' => '22'
 ];
 
 $rule = [
     'name' => [
         'type' => 'string',
         'regex' => '/^.{3}$/u',
+        'min' => 1,
+        'max' => 4,
+        'length' => 3,
         'error' => [
-            'lack' => 'name不存在',
-            'type' => '类型错误',
-            'regex' => 'name匹配失败',
-        ],
-        'filter' => [
-            //'trim' => ['1']
+            'lack' => '没有{V_PARAM}参数',
+            'type' => '{V_PARAM}不是{V_DATA}类型',
+            'regex' => '{V_PARAM}匹配失败',
+            'min' => '{V_PARAM}最小不能超过{V_DATA}位',
+            'max' => '{V_PARAM}最大不能超过{V_DATA}位',
+            'length' => '{V_PARAM}不是{V_DATA}位'
         ],
     ],
     'age' => [
         'type' => 'int',
-        'max' => 50,
-        'min' => 0,
-        'default' => 1,
+        'min' => 20,
+        'max' => 99,
+        'default' => 20,
         'error' => [
-            'lack' => '没有age参数',
-            'type' => 'age类型不匹配',
-            'max' => 'age大于最大值',
-            'min' => 'age小于最小值',
-        ],
-    ],
-    'money' => [
-        'type' => 'int',
-        'max' => 500,
-        'min' => 0,
-        'default' => 99,
-        'error' => [
-            'lack' => '没有money参数',
-            'type' => 'money类型不匹配',
-            'max' => 'money大于最大值',
-            'min' => 'money小于最小值',
-        ],
-    ],
-    'roles' => [
-        'type' => 'array',
-        'count' => 3,
-        'error' => [
-            'lack' => '没有role参数',
-            'type' => 'role类型不匹配',
-            'count' => 'count数量不正确',
+            'type' => '{V_PARAM}不是{V_DATA}类型',
+            'min' => '{V_PARAM}最小不能超过{V_DATA}',
+            'max' => '{V_PARAM}最大不能超过{V_DATA}',
+            'length' => '{V_PARAM}不是{V_DATA}位'
         ],
     ],
 ];
 
 
-Verify::registerRule($rule);
+try {
 
-$check = new Verify($_POST);
+    $vInst = Verify::registerRule($rule);
 
-try{
-    if(!$check->checkParams(['name', 'age', 'money', 'roles'], $args)){
-        echo $check->getError();
+    if (!$vInst->checkParams($_POST, ['name', 'age'], $args)) {
+        echo $vInst->getError();
         return;
     }
 
-    list($name, $age, $money, $roles) = $args;
+    list($name, $age) = $args;
 
-    //string(3) "tao"
-    //int(23)
-    //double(0)
-    //array(3) {...}
-    //var_dump($name, $age, $money, $roles);
+    var_dump($name);
+    var_dump($age);
 
-}catch (\Exception $e){
+
+} catch (\Exception $e) {
     //handle an exception
     echo 'Exception: ' . $e->getMessage();
 }
+
+
 
 

@@ -1,144 +1,138 @@
-### 安装 (Install)
+### 安装
 ```
 composer require angletf/php-verify
 ```
 
-### 引入自动加载和命名空间 (Introduces automatic loading and namespaces)
+### 引入自动加载和命名空间
 ```php
 include_once "../vendor/autoload.php";
 use angletf\Verify;
 ```
 
-### 注册规则 (Registration rules)
+### 注册规则
 ```php
 $rule = [
     'name' => [
-        'type' => 'string',                 //必须字段 Required fields
-        'length' => 3,                      //该字符长度要求为3 Character length requirement 3
-        'regex' => '/\w+/',                 //正则规则 Regex rules
-        'default' => 'tlf123',              //默认参数 default parameters
+        'type' => 'string',
+        'regex' => '/^.{3}$/u',
+        'min' => 1,
+        'max' => 4,
+        'length' => 3,
         'error' => [
-            'lack' => 'no name argument',   //必须字段 Required fields
-            'type' => 'type mismatch',      //必须字段 Required fields
-            'length' => 'name length mismatch',
-            'regex' => 'regex mismatch',
+            'lack' => '没有{V_PARAM}参数',
+            'type' => '{V_PARAM}不是{V_DATA}类型',
+            'regex' => '{V_PARAM}匹配失败',
+            'min' => '{V_PARAM}最小不能超过{V_DATA}位',
+            'max' => '{V_PARAM}最大不能超过{V_DATA}位',
+            'length' => '{V_PARAM}不是{V_DATA}位'
         ],
     ],
     'age' => [
         'type' => 'int',
-        'max' => 50,
-        'min' => 0,
+        'min' => 20,
+        'max' => 99,
+        'default' => 20,
         'error' => [
-            'lack' => 'no age argument',
-            'type' => 'type mismatch',
-            'max' => 'over max age',
-            'min' => 'over min age',
+            'type' => '{V_PARAM}不是{V_DATA}类型',
+            'min' => '{V_PARAM}最小不能超过{V_DATA}',
+            'max' => '{V_PARAM}最大不能超过{V_DATA}',
+            'length' => '{V_PARAM}不是{V_DATA}位'
         ],
     ],
-    'money' => [
-        'type' => 'float',
-        'max' => 500,
-        'min' => 0,
-        'default' =>0,
-        'error' => [
-            'lack' => 'no money argument',
-            'type' => 'type mismatch',
-            'max' => 'over max money',
-            'min' => 'over min money',
-        ],
-    ],
-    'roles' => [
-            'type' => 'array',
-            'count' => 3,
-            'error' => [
-                'lack' => 'no role argument',
-                'type' => 'type mismatch',
-                'count' => 'argument role count mismatch',
-            ],
-        ]
 ];
-
-#注册规则 (Registration rules)
-Verify::registerRule($rule);
 ```
 
-### 快速使用 (Quick to use)
+### 快速使用
 
 ```php
-#伪造一个post请求
+//伪造一个post请求
 $_POST = [
     'name' => 'tao',
-    'age' => '23',
-    'roles' => [
-        1, 2, 3
-    ]
-    //'money' => '100.1'
+    'age' => '22'
 ];
 
-$check = new Verify($_POST);
 
-try{
-    if(!$check->checkParams(['name', 'age', 'money', 'roles'], $args)){
-        echo $check->getError();
+
+try {
+    
+    //注册规则, 并且返回实例
+    $vInst = Verify::registerRule($rule);
+
+    //第一个参数是需要验证的数组($_POST, $_GET)
+    //第二个参数是需要验证哪些参数
+    //第三个参数是按照第二个参数的顺序返回参数, 是一个引用类型
+    //如果验证失败, 则输出规则中对应的信息
+    if (!$vInst->checkParams($_POST, ['name', 'age'], $args)) {
+        echo $vInst->getError();
         return;
     }
-    
-    //按照checkParams的第一个参数数组的顺序返回
-    list($name, $age, $money, $roles) = $args;
 
-    //string(3) "tao"
-    //int(23)
-    //double(0)
-    //array(3) {...}
-    var_dump($name, $age, $money, $roles);
+    list($name, $age) = $args;
 
-}catch (\Exception $e){
+    var_dump($name);
+    var_dump($age);
+
+
+} catch (\Exception $e) {
     //handle an exception
     echo 'Exception: ' . $e->getMessage();
 }
+
 ```
 
-### 注册规则参数说明 (Registration rule parameter specification)
+### 注册规则参数说明
 
-**规则名&参数名 (Rule name & parameter name)**
+**规则名&参数名**
 
-规则注册接收一个二维数组, key是规则名 同时也是等待验证的参数名, error中的lack和type都是必填字段,
-The rule registration receives a two-dimensional array. The key is the name of the rule and also the parameter name to be verified. Lack and type in error are required fields.
+规则注册接收一个二维数组, error中的lack是必填字段, 当有default验证器时可以忽略这个选项
 ```php
 [
-    '规则名&验证参数名' => [
-        'type' => '变量类型(必填)',
-        '这个type支持所支持的规则' => '规则匹配值',
+    '验证参数名' => [
+        '验证器1' => '验证器需要确认的规范值',
+        '验证器2' => '验证器需要确认的规范值',
         ...
         'error' => [
-            'lack' => '这个参数缺失(必填)',
-            'type' => '这个类型不正确(必填)',
-            '对应的规则' => '错误返回的值'
+            'lack' => '这个参数缺失(必填), 当有default验证器时可以忽略这个选项',
+            '验证器1' => '当验证器1验证不通过时返回的错误信息',
+            '验证器2' => '当验证器2验证不通过时返回的错误信息',
             ....
         ]
-    ]   
+    ]
+    ...
 ]
 ```
 
 
-**type支持的类型 (type supported parameter values)**
+**验证器**
 
-|type|可使用的规则名称|
+|验证器名|可允许的值|
 |---|---|
-|string|`length`, `regex`, `default`|
-|float|`min`, `max`, `default`|
-|int|`min`, `max`, `default`|
-|array|`count`|
+|type|`string`, `float`, `int`, `array`|
+|regex|正则, 例如'/^.{3}$/u'|
+|min|参数不能小于xxx, 如果验证对象是数字类型则验证大小, 如果是字符类型则使用`utf-8`编码验证长度|
+|max|参数不能大于xxx, 如果验证对象是数字类型则验证大小, 如果是字符类型则使用`utf-8`编码验证长度|
+|length|验证参数长度, 如果验证对象是数字则转化为字符, 使用`utf-8`编码验证长度|
+|default|当验证中没有这个参数时, 会使用默认值返回, 默认值不会经过验证|
 
-**错误信息返回 (return error message)**
+**错误信息返回**
 
 error是数组对应匹配规则报错的自定义信息, 如果有匹配失败则返回某个规则的错误用户自定义信息, 不限于字符串
-Error is the custom information reported by the array corresponding to the matching rule. If there is a matching failure, the error user custom information of a rule will be returned, which is not limited to strings
 
-**Verify方法 (Verify method)**
+error规则中可以注入的参数
 
-|method|argument|
+|参数|介绍|
 |---|---|
-|Verify::registerRule|void Verify::registerRule ( array )|
-|Verify::checkParams|bool Verify::checkParams ( array, &array )|
+|{V_PARAM}|当前验证的参数|
+|{V_NAME}|验证器的名字|
+|{V_DATA}|验证器的规范值|
+
+
+
+
+**Verify API**
+
+|方法|介绍|
+|---|---|
+|Verify Verify::registerRule ( array rules)|注册规则, 并且返回实例|
+|bool Verify::checkParams (array request_params, array check_params, &array result)|验证参数|
 

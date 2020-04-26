@@ -18,174 +18,166 @@ namespace angletf;
 class Verify
 {
 
+    public static $instance = null;
+
     /**
-     * 用户传入的错误返回值
+     * 用户传入的错误返回规则
      * @var mixed
      */
-    public $error;
+    protected $verifyError = [];
+
+    /**
+     * 用户传入的默认规则
+     * @var array
+     */
+    protected $verifyDefault = [];
 
     /**
      * 定义全局验证规则
      * @var array
      */
-    public static $rule = [];
+    protected $rules = [];
+
 
     /**
-     * 存放默认值的键值
-     * @var array
-     */
-    public $defaultKey = [];
-
-    /**
-     * 需要忽略的方法名
-     * @var array
-     */
-    private $ignore = ['error', 'type', 'default', 'filter'];
-
-    /**
-     * 支持的验证类型
-     * @var array
-     */
-    public $supportVerifyTypes = ['string', 'int', 'float', 'array'];
-
-    /**
-     * 等待验证的参数
-     * @var array
-     */
-    public $verifyParams = [];
-
-    /**
-     * Filter 对象
+     * 当前的错误信息
      * @var null
      */
-    private $filter = null;
+    protected $currentErrorMessage = null;
 
-    public function __construct($verify)
-    {
-        $this->verifyParams = $verify;
-        $this->filter = new Filter();
-    }
 
-    public static function registerRule($rule = [])
+    /**
+     * 验证器类映射
+     * @var array
+     */
+    protected $classMap = [];
+
+    protected $globalVar = [
+        '{V_PARAM}',
+        '{V_NAME}',
+        '{V_DATA}',
+    ];
+
+    /**
+     * Verify constructor.
+     * @param $rules
+     * @throws \Exception
+     */
+    private function __construct($rules)
     {
-        self::$rule = array_merge(self::$rule, $rule);
+        $verifyError = [];
+        $verifyDefault = [];
+
+        //模块分类
+        foreach ($rules as $name => &$rule) {
+            $has_default = false;
+
+            if (!isset($rule['error'])) {
+                throw new \Exception('Missing error configuration item');
+            }
+
+            $verifyError[$name] = $rule['error'];
+            unset($rule['error']);
+
+            if (isset($rule['default'])) {
+                $verifyDefault[$name] = $rule['default'];
+                $has_default = true;
+                unset($rule['default']);
+            }
+
+            foreach ($rule as $validator => $item) {
+
+                $class_name = __NAMESPACE__ . '\validator\\' . ucfirst($validator);
+
+                if (!class_exists($class_name)) {
+                    throw new \Exception("validator not exists: $class_name");
+                }
+
+                $this->classMap[$validator] = $class_name;
+
+                if (!isset($verifyError[$name][$validator])) {
+                    throw new \Exception("Please set {$name} rule, `{$validator}` error handle");
+                }
+            }
+
+            //检测error.lack参数, 有default参数会忽略lack验证
+            if (!$has_default && !isset($verifyError[$name]['lack'])) {
+                throw new \Exception("Please set {$name} rule, `lack` error handle");
+            }
+        }
+
+        $this->verifyError = $verifyError;
+        $this->verifyDefault = $verifyDefault;
+        $this->rules = $rules;
     }
 
     /**
-     * 验证参数
-     * @param array $params 需要验证的参数
-     * @param array $args 返回的参数
-     * @return bool
+     * 注册规则, 并且返回实例
+     * @param array $rules
+     * @return Verify|null
      * @throws \Exception
      */
-    public function checkParams($params, &$args)
+    public static function registerRule($rules = [])
     {
-        $verify = $this->verifyParams;
-
-        if (count(array_diff($params, array_keys(self::$rule))) != 0) {
-            throw new \Exception('Please register the rules');
+        if (is_null(self::$instance)) {
+            self::$instance = new self($rules);
         }
+        return self::$instance;
+    }
 
-        $lack_arr = array_diff($params, array_keys($verify));
 
-        foreach ($lack_arr as $k) {
-            if (!isset(self::$rule[$k]['default'])) {
-                $this->error = self::$rule[$k]['error']['lack'];
-                return false;
-            }
-            $verify[$k] = self::$rule[$k]['default'];
-            $this->defaultKey[] = $k;
-        }
-
+    public function checkParams($data, $params, &$args)
+    {
         $validated = [];
 
-        foreach ($params as $k) {
+        foreach ($params as $param_name) {
 
-            //如果使用的是默认值, 或者不存在规则配置 则不需要进行验证
-            if (in_array($k, $this->defaultKey) || !isset(self::$rule[$k])) {
-                $validated[] = $verify[$k];
+            if (!isset($this->rules[$param_name])) {
+                throw new \Exception("Please register the rule for {$param_name}");
+            }
+
+            //如果有默认值
+            if (!isset($data[$param_name]) && isset($this->verifyDefault[$param_name])) {
+                $validated[] = $this->verifyDefault[$param_name];
                 continue;
             }
 
-            $type = isset(self::$rule[$k]['type']) ? self::$rule[$k]['type'] : 'string';
-            //验证支持的类型模型
-            if (!in_array($type, $this->supportVerifyTypes)) {
-                throw new \Exception("Unknown validation model");
-            }
-
-            //过滤字符串参数
-            $this->filter->stringFilter($verify[$k],
-                isset(self::$rule[$k]['filter']) ? self::$rule[$k]['filter'] : []);
-
-            $class_name = __NAMESPACE__ . '\types\Verify' . ucfirst($type);
-
-            $rule = self::$rule[$k];
-
-            //验证类型
-            if (!$this->checkType($type, $verify[$k], $verify_val)) {
-                $this->error = $rule['error']['type'];
+            if (!isset($data[$param_name])) {
+                $this->currentErrorMessage = $this->injectVar($this->verifyError[$param_name]['lack'], $param_name);
                 return false;
             }
 
-            $verify[$k] = $verify_val;
-
-            foreach ($rule as $rk => $rv) {
-                if (in_array($rk, $this->ignore) ||
-                    !is_callable([$class_name, 'verify' . ucfirst($rk)], true, $callback_name)) {
-                    continue;
-                }
-                if (call_user_func($callback_name, $verify_val, $rv) !== true) {
-                    $this->error = $rule['error'][$rk];
+            foreach ($this->rules[$param_name] as $validator => $rule_value) {
+                if (!$this->classMap[$validator]::check($data[$param_name], $rule_value)) {
+                    $this->currentErrorMessage = $this->injectVar($this->verifyError[$param_name][$validator], $param_name, $validator, $rule_value);
                     return false;
                 }
             }
 
-            $validated[] = $verify[$k];
+            $validated[] = $data[$param_name];
         }
 
         $args = $validated;
-
         return true;
+    }
+
+    public function injectVar($err_message, $param_name, $validator = null, $rule_value = null)
+    {
+        if (!is_string($err_message)) {
+            return $err_message;
+        }
+
+        return str_replace($this->globalVar, [
+            $param_name,
+            $validator,
+            $rule_value
+        ], $err_message);
     }
 
     public function getError()
     {
-        return $this->error;
+        return $this->currentErrorMessage;
     }
-
-    private function checkType($type, $verify_val, &$filter_val)
-    {
-        switch ($type) {
-            case 'string':
-                if (!is_string($verify_val)) {
-                    return false;
-                }
-                $filter_val = $verify_val;
-                break;
-            case 'int':
-                $filter_var = filter_var($verify_val, FILTER_VALIDATE_INT);
-                if ($filter_var === false) {
-                    return false;
-                }
-                $filter_val = $filter_var;
-                break;
-            case 'float':
-                $filter_var = filter_var($verify_val, FILTER_VALIDATE_FLOAT);
-                if ($filter_var === false) {
-                    return false;
-                }
-                $filter_val = $filter_var;
-                break;
-            case 'array':
-                if (!is_array($verify_val)) {
-                    return false;
-                }
-                $filter_val = $verify_val;
-                break;
-        }
-        return true;
-    }
-
 }
 
 
