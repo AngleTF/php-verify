@@ -126,7 +126,7 @@ class Verify
     }
 
 
-    public function checkParams($data, $params, &$args)
+    public function checkParams($data, $params, &$args, $convert = true)
     {
         $validated = [];
 
@@ -148,7 +148,7 @@ class Verify
             }
 
             foreach ($this->rules[$param_name] as $validator => $rule_value) {
-                if (!$this->classMap[$validator]::check($data[$param_name], $rule_value)) {
+                if (!$this->classMap[$validator]::check($data[$param_name], $rule_value, $convert)) {
                     $this->currentErrorMessage = $this->injectVar($this->verifyError[$param_name][$validator], $param_name, $validator, $rule_value);
                     return false;
                 }

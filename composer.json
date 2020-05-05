@@ -9,7 +9,9 @@
             "role": "Developer"
         }
     ],
-    "require": {},
+    "require": {
+        "ext-json": "*"
+    },
 	"autoload": {
         "psr-4": {
             "angletf\\": "src/"

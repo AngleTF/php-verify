@@ -9,7 +9,7 @@ use angletf\Check;
 
 class Length implements Check
 {
-    public static function check(&$data, $rule_value)
+    public static function check(&$data, $rule_value, $convert = true)
     {
         $source_data = $data;
         if(is_numeric($source_data)){
