@@ -36,12 +36,12 @@ $rule = [
     ],
     'age' => [
         'type' => 'int',
-        'min' => 20,
+        'min' => 99,
         'max' => 99,
         'default' => 20,
         'error' => [
             'type' => '{V_PARAM}不是{V_DATA}类型',
-            'min' => '{V_PARAM}最小不能超过{V_DATA}',
+            'min' => ['{V_PARAM}最小不能超过{V_DATA}'],
             'max' => '{V_PARAM}最大不能超过{V_DATA}',
             'length' => '{V_PARAM}不是{V_DATA}位'
         ],
@@ -54,7 +54,7 @@ try {
     $vInst = Verify::registerRule($rule);
 
     if (!$vInst->checkParams($_POST, ['name', 'age'], $args, false)) {
-        echo $vInst->getError();
+        var_dump($vInst->getError());
         return;
     }
 

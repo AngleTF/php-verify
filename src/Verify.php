@@ -163,10 +163,21 @@ class Verify
 
     public function injectVar($err_message, $param_name, $validator = null, $rule_value = null)
     {
-        if (!is_string($err_message)) {
-            return $err_message;
+        if (is_string($err_message)) {
+            return $this->replaceStrVal($err_message, $param_name, $validator, $rule_value);
         }
 
+        if(is_array($err_message) && isset($err_message[0])){
+            if(is_string($err_message[0])){
+                $err_message[0] = $this->replaceStrVal($err_message[0], $param_name, $validator, $rule_value);
+                return $err_message;
+            }
+        }
+
+        return $err_message;
+    }
+
+    public function replaceStrVal($err_message, $param_name, $validator = null, $rule_value = null){
         return str_replace($this->globalVar, [
             $param_name,
             $validator,
