@@ -58,6 +58,8 @@ class Verify
         '{V_DATA}',
     ];
 
+    protected $separator = ',';
+
     /**
      * Verify constructor.
      * @param $rules
@@ -65,50 +67,72 @@ class Verify
      */
     private function __construct($rules)
     {
-        $verifyError = [];
-        $verifyDefault = [];
 
         //模块分类
-        foreach ($rules as $name => &$rule) {
-            $has_default = false;
+        foreach ($rules as $name => $rule) {
 
-            if (!isset($rule['error'])) {
-                throw new \Exception('Missing error configuration item');
-            }
-
-            $verifyError[$name] = $rule['error'];
-            unset($rule['error']);
-
-            if (isset($rule['default'])) {
-                $verifyDefault[$name] = $rule['default'];
-                $has_default = true;
-                unset($rule['default']);
-            }
-
-            foreach ($rule as $validator => $item) {
-
-                $class_name = __NAMESPACE__ . '\validator\\' . ucfirst($validator);
-
-                if (!class_exists($class_name)) {
-                    throw new \Exception("validator not exists: $class_name");
+            //检查名字是否具有多参数验证
+            if (strpos($name, $this->separator) !== false) {
+                foreach (explode($this->separator, $name) as $new_name) {
+                    $this->setRule($new_name, $rule);
                 }
+            } else {
+                $this->setRule($name, $rule);
+            }
+        }
+    }
 
-                $this->classMap[$validator] = $class_name;
+    /**
+     * 设置规则
+     * @param $name
+     * @param $rule
+     * @throws \Exception
+     */
+    public function setRule($name, $rule)
+    {
 
-                if (!isset($verifyError[$name][$validator])) {
-                    throw new \Exception("Please set {$name} rule, `{$validator}` error handle");
-                }
+        $name = trim($name);
+
+        if (empty($name)) {
+            return;
+        }
+
+        $has_default = false;
+
+        if (!isset($rule['error'])) {
+            throw new \Exception('Missing error configuration item');
+        }
+
+        $this->verifyError[$name] = $rule['error'];
+        unset($rule['error']);
+
+        if (isset($rule['default'])) {
+            $this->verifyDefault[$name] = $rule['default'];
+            $has_default = true;
+            unset($rule['default']);
+        }
+
+        foreach ($rule as $validator => $item) {
+
+            $class_name = __NAMESPACE__ . '\validator\\' . ucfirst($validator);
+
+            if (!class_exists($class_name)) {
+                throw new \Exception("validator not exists: $class_name");
             }
 
-            //检测error.lack参数, 有default参数会忽略lack验证
-            if (!$has_default && !isset($verifyError[$name]['lack'])) {
-                throw new \Exception("Please set {$name} rule, `lack` error handle");
+            $this->classMap[$validator] = $class_name;
+
+            if (!isset($this->verifyError[$name][$validator])) {
+                throw new \Exception("Please set {$name} rule, `{$validator}` error handle");
             }
         }
 
-        $this->verifyError = $verifyError;
-        $this->verifyDefault = $verifyDefault;
-        $this->rules = $rules;
+        //检测error.lack参数, 有default参数会忽略lack验证
+        if (!$has_default && !isset($this->verifyError[$name]['lack'])) {
+            throw new \Exception("Please set {$name} rule, `lack` error handle");
+        }
+
+        $this->rules[$name] = $rule;
     }
 
     /**
@@ -167,8 +191,8 @@ class Verify
             return $this->replaceStrVal($err_message, $param_name, $validator, $rule_value);
         }
 
-        if(is_array($err_message) && isset($err_message[0])){
-            if(is_string($err_message[0])){
+        if (is_array($err_message) && isset($err_message[0])) {
+            if (is_string($err_message[0])) {
                 $err_message[0] = $this->replaceStrVal($err_message[0], $param_name, $validator, $rule_value);
                 return $err_message;
             }
@@ -177,7 +201,8 @@ class Verify
         return $err_message;
     }
 
-    public function replaceStrVal($err_message, $param_name, $validator = null, $rule_value = null){
+    public function replaceStrVal($err_message, $param_name, $validator = null, $rule_value = null)
+    {
         return str_replace($this->globalVar, [
             $param_name,
             $validator,

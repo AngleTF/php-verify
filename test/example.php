@@ -18,13 +18,14 @@ include_once "../vendor/autoload.php";
 use angletf\Verify;
 
 $_POST = [
-    'name' => 'MTE=',
+    'name' => 'tao',
+    'desc' => 'I\'m a good person',
     'age' => '22'
 ];
 
 $rule = [
-    'name' => [
-        'type' => 'base64',
+    'name, desc' => [
+        'type' => 'string',
         'error' => [
             'lack' => '没有{V_PARAM}参数',
             'type' => '{V_PARAM}不是{V_DATA}类型',
@@ -36,7 +37,7 @@ $rule = [
     ],
     'age' => [
         'type' => 'int',
-        'min' => 99,
+        'min' => 20,
         'max' => 99,
         'default' => 20,
         'error' => [
@@ -53,15 +54,16 @@ try {
 
     $vInst = Verify::registerRule($rule);
 
-    if (!$vInst->checkParams($_POST, ['name', 'age'], $args, false)) {
+    if (!$vInst->checkParams($_POST, ['name', 'age', 'desc'], $args, false)) {
         var_dump($vInst->getError());
         return;
     }
 
-    list($name, $age) = $args;
+    list($name, $age, $desc) = $args;
 
     var_dump($name);
     var_dump($age);
+    var_dump($desc);
 
 
 } catch (\Exception $e) {
