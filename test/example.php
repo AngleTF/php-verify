@@ -1,61 +1,71 @@
 <?php
-/**
- *  +-------------+-----------------+-----------+------------------+
- *  |   Author    |      Date       |  version  |   E-mail         |
- *  +-------------+-----------------+-----------+------------------+
- *  |  Tao lifeng | 2019/2/15 0:10 |   1.0     | 742592958@qq.com |
- *  +-------------+-----------------+-----------+------------------+
- *  |                       Abstract                               |
- *  +--------------------------------------------------------------+
- *  |
- *  |
- *  |
- *  +--------------------------------------------------------------+
- */
 
 include_once "../vendor/autoload.php";
 
 use angletf\Verify;
+use angletf\VerifyType;
 
 $_POST = [
-    'name' => 'tao',
-    'desc' => 'I\'m a good person',
+    'name' => 'hello',
+    //'desc' => 'I\'m a good person',
     'age' => '22'
 ];
 
+const EType = new Exception("{PARAM}不是正确的类型{V_NAME} 数据: {DATA}", 1);
+const ERequire = new Exception("{PARAM}没有传入", 2);
+const EFormat = new Exception("{PARAM}格式不正确", 3);
+const ELen = new Exception("{PARAM}长度不正确", 4);
+
 $rule = [
-    'name, desc' => [
-        'type' => 'string',
-        'error' => [
-            'lack' => '没有{V_PARAM}参数',
-            'type' => '{V_PARAM}不是{V_DATA}类型',
-            'regex' => '{V_PARAM}匹配失败',
-            'min' => '{V_PARAM}最小不能超过{V_DATA}位',
-            'max' => '{V_PARAM}最大不能超过{V_DATA}位',
-            'length' => '{V_PARAM}不是{V_DATA}位'
+    //参数必传
+    'age' => [
+        'required' => [
+            'value' => false,
+            'default' => '99',
+            'error' => ERequire
         ],
     ],
-    'age' => [
-        'type' => 'int',
-        'min' => 20,
-        'max' => 99,
-        'default' => 20,
-        'error' => [
-            'type' => '{V_PARAM}不是{V_DATA}类型',
-            'min' => ['{V_PARAM}最小不能超过{V_DATA}'],
-            'max' => '{V_PARAM}最大不能超过{V_DATA}',
-            'length' => '{V_PARAM}不是{V_DATA}位'
+    'desc' => [
+
+    ],
+    'name' => [
+        'required' => [
+            'value' => true,
+            'default' => "lifeng",
+            'error' => ERequire
         ],
+        'type' => [
+            'value' => VerifyType::String,
+            'error' => EType
+        ],
+        'regex' => [
+            'value' => '/^\w+$/',
+            'error' => EFormat
+        ],
+        'min' => [
+            'value' => 1,
+            'error' => ELen
+        ],
+        'max' => [
+            'value' => 20,
+            'error' => ELen
+        ],
+//        'len' => [
+//            'value' => 11,
+//            'error' => ELen
+//        ],
     ],
 ];
 
 
 try {
 
-    $vInst = Verify::registerRule($rule);
+    $instance = Verify::registerRule($rule);
 
-    if (!$vInst->checkParams($_POST, ['name', 'age', 'desc'], $args, false)) {
-        var_dump($vInst->getError());
+    if (!$instance->checkParams($_POST, ['name', 'age', 'desc'], $args, false)) {
+        $e = $instance->getVerifyError();
+        echo $instance->getError()->getMessage();
+        var_dump($e);
         return;
     }
 

@@ -4,47 +4,48 @@
 namespace angletf\validator;
 
 use angletf\Check;
+use angletf\Validator;
+use angletf\VerifyType;
 
-class Type implements Check
+class Type extends Validator implements Check
 {
-    public static function check(&$data, $rule_value, $convert = true)
+    /**
+     * @throws \Exception
+     */
+    public function check(&$data): bool
     {
-        $type = strtolower($rule_value);
+        if ($data === null) return false;
+
         $new_data = null;
 
-        switch ($type) {
-            case 'string':
+        switch ($this->value) {
+            case VerifyType::String:
                 if (!is_string($data)) return false;
                 break;
-            case 'int':
+            case VerifyType::Int:
                 if (filter_var($data, FILTER_VALIDATE_INT) === false) return false;
-                $new_data = filter_var($data, FILTER_VALIDATE_INT);
                 break;
-            case 'float':
+            case VerifyType::Float:
                 if (filter_var($data, FILTER_VALIDATE_FLOAT) === false) return false;
-                $new_data = filter_var($data, FILTER_VALIDATE_FLOAT);
                 break;
-            case 'array':
+            case VerifyType::Array:
                 if (!is_array($data)) return false;
                 break;
-            case 'json':
+            case VerifyType::Json:
                 if (!is_string($data)) return false;
                 $new_data = json_decode($data, true);
-                if($new_data === null) return false;
+                if ($new_data === null && json_last_error() != JSON_ERROR_NONE) return false;
                 break;
-            case 'base64':
+            case VerifyType::Base64:
                 if (!is_string($data)) return false;
                 $new_data = base64_decode($data, true);
-                if($new_data === false) return false;
+                if ($new_data === false) return false;
                 break;
             default:
-                throw new \Exception("Type Validator error: Unknown type {$type}");
+                throw new \Exception("Type Validator error: Unknown type {$this->value}");
                 break;
         }
 
-        if($new_data !== null && $convert){
-            $data = $new_data;
-        }
 
         return true;
     }

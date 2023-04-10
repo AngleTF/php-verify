@@ -4,23 +4,24 @@
 namespace angletf\validator;
 
 
-
 use angletf\Check;
+use angletf\Validator;
 
-class Max implements Check
+class Max extends Validator implements Check
 {
-    public static function check(&$data, $rule_value, $convert = true)
+    public function check(&$data): bool
     {
-        if(is_numeric($data)){
-            return $data <= $rule_value;
+        if ($data === null) return false;
+
+        if (is_numeric($data)) {
+            return $data <= $this->value;
         }
 
-        if(is_string($data)){
+        if (is_string($data)) {
             $len = mb_strlen($data, 'utf-8');
-            return $len <= $rule_value;
+            return $len <= $this->value;
         }
 
-        //throw new \Exception("Max Validator error: not a character or a number");
         return false;
     }
 }

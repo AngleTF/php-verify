@@ -9,34 +9,48 @@ include_once "../vendor/autoload.php";
 use angletf\Verify;
 ```
 
-### 注册规则
+### 注册规则&错误
 ```php
+const EType = new Exception("{PARAM}不是正确的类型{V_NAME} 数据: {DATA}", 1);
+const ERequire = new Exception("{PARAM}没有传入", 2);
+const EFormat = new Exception("{PARAM}格式不正确", 3);
+const ELen = new Exception("{PARAM}长度不正确", 4);
+
+
 $rule = [
-    'name' => [
-        'type' => 'string',
-        'regex' => '/^.{3}$/u',
-        'min' => 1,
-        'max' => 4,
-        'length' => 3,
-        'error' => [
-            'lack' => '没有{V_PARAM}参数',
-            'type' => '{V_PARAM}不是{V_DATA}类型',
-            'regex' => '{V_PARAM}匹配失败',
-            'min' => '{V_PARAM}最小不能超过{V_DATA}位',
-            'max' => '{V_PARAM}最大不能超过{V_DATA}位',
-            'length' => '{V_PARAM}不是{V_DATA}位'
+    'age' => [
+        //age参数不是必传, 如果没有传入 设置默认值为 '99'
+        //也可以将默认值设置为 `NULL` 在程序中进行判断
+        'required' => [
+            'value' => false,
+            'default' => '99',
+            'error' => ERequire
         ],
     ],
-    'age' => [
-        'type' => 'int',
-        'min' => 20,
-        'max' => 99,
-        'default' => 20,
-        'error' => [
-            'type' => '{V_PARAM}不是{V_DATA}类型',
-            'min' => '{V_PARAM}最小不能超过{V_DATA}',
-            'max' => '{V_PARAM}最大不能超过{V_DATA}',
-            'length' => '{V_PARAM}不是{V_DATA}位'
+    'desc' => [
+
+    ],
+    'name' => [
+        //name 参数必传
+        'required' => [
+            'value' => true,
+            'error' => ERequire
+        ],
+        'type' => [
+            'value' => VerifyType::String,
+            'error' => EType
+        ],
+        'regex' => [
+            'value' => '/^\w+$/',
+            'error' => EFormat
+        ],
+        'min' => [
+            'value' => 1,
+            'error' => ELen
+        ],
+        'max' => [
+            'value' => 20,
+            'error' => ELen
         ],
     ],
 ];
@@ -56,21 +70,22 @@ $_POST = [
 try {
     
     //注册规则, 并且返回实例
-    $vInst = Verify::registerRule($rule);
+    $instance = Verify::registerRule($rule);
 
     //第一个参数是需要验证的数组($_POST, $_GET)
     //第二个参数是需要验证哪些参数
     //第三个参数是按照第二个参数的顺序返回参数, 是一个引用类型
     //如果验证失败, 则输出规则中对应的信息
-    if (!$vInst->checkParams($_POST, ['name', 'age'], $args)) {
-        echo $vInst->getError();
+    if (!$instance->checkParams($_POST, ['name', 'age', 'desc'], $args)) {
+        echo $instance->getError()->getMessage();
         return;
     }
 
-    list($name, $age) = $args;
+    list($name, $age, $desc) = $args;
 
     var_dump($name);
     var_dump($age);
+    var_dump($desc);
 
 
 } catch (\Exception $e) {
@@ -84,18 +99,16 @@ try {
 
 **规则名&参数名**
 
-规则注册接收一个二维数组, error中的lack是必填字段, 当有default验证器时可以忽略这个选项
+> 规则注册接收一个二维数组
 ```php
 [
-    '验证参数名' => [
-        '验证器1' => '验证器需要确认的规范值',
-        '验证器2' => '验证器需要确认的规范值',
+    '参数名' => [
+        '验证器1' => [
+            'value' => '验证器1的value',
+            'error' => '当验证失败时, 验证器1返回的错误, Exception类型'
+        ],
+        '验证器2' => [
         ...
-        'error' => [
-            'lack' => '这个参数缺失(必填), 当有default验证器时可以忽略这个选项',
-            '验证器1' => '当验证器1验证不通过时返回的错误信息',
-            '验证器2' => '当验证器2验证不通过时返回的错误信息',
-            ....
         ]
     ]
     ...
@@ -103,36 +116,76 @@ try {
 ```
 
 
-**验证器**
+**required验证器**
 
-|验证器名|可允许的值|
-|---|---|
-|type|`string`, `float`, `int`, `array`|
-|regex|正则, 例如'/^.{3}$/u'|
-|min|参数不能小于xxx, 如果验证对象是数字类型则验证大小, 如果是字符类型则使用`utf-8`编码验证长度|
-|max|参数不能大于xxx, 如果验证对象是数字类型则验证大小, 如果是字符类型则使用`utf-8`编码验证长度|
-|length|验证参数长度, 如果验证对象是数字则转化为字符, 使用`utf-8`编码验证长度|
-|default|当验证中没有这个参数时, 会使用默认值返回, 默认值不会经过验证|
+| 参数名     | 允许的值                                           |
+|---------|------------------------------------------------|
+| value   | 是否为必须参数, 如果为true, 则必须传入, 如果为false, 则未传入时将赋予默认值 |
+| error   | Exception错误                                    |
+| default | 默认值                                            |
+
+
+**type验证器**
+
+| 参数名     | 允许的值                                           |
+|---------|------------------------------------------------|
+| value   | `VerifyType::String`, `VerifyType::Float`, `VerifyType::Int`, `VerifyType::Array`, `VerifyType::Json`, `VerifyType::Base64` |
+| error   | Exception错误                                    |
+
+**regex验证器**
+
+| 参数名     | 允许的值        |
+|---------|-------------|
+| value   | 正则内容        |
+| error   | Exception错误 |
+
+**min验证器**
+
+| 参数名     | 允许的值        |
+|---------|-------------|
+| value   | 参数不能小于xxx, 如果验证对象是数字类型则验证大小, 如果是字符类型则使用`utf-8`编码验证长度         |
+| error   | Exception错误 |
+
+**max验证器**
+
+| 参数名     | 允许的值        |
+|---------|-------------|
+| value   | 参数不能小于xxx, 如果验证对象是数字类型则验证大小, 如果是字符类型则使用`utf-8`编码验证长度         |
+| error   | Exception错误 |
+
+**len验证器**
+
+| 参数名     | 允许的值        |
+|---------|-------------|
+| value   | 验证参数长度, 如果验证对象是数字则转化为字符, 使用`utf-8`编码验证长度    |
+| error   | Exception错误 |
 
 **错误信息返回**
 
-error是数组对应匹配规则报错的自定义信息, 如果有匹配失败则返回某个规则的错误用户自定义信息, 不限于字符串
+> 通过 checkParams 方法, 来判断验证是否通过, 如果未通过 可以打印error来获取精准的信息
 
-error规则中可以注入的参数
+```php
 
-|参数|介绍|
-|---|---|
-|{V_PARAM}|当前验证的参数|
-|{V_NAME}|验证器的名字|
-|{V_DATA}|验证器的规范值|
+if (!$instance->checkParams($_POST, ['name', 'age', 'desc'], $args)) {
+    //返回你在规则中提供的 error => \Exception
+    var_dump($instance->getError());
+    return;
+}
+```
+
+| Exception.message的模板参数 | 介绍      |
+|--------------------|---------|
+| {PARAM}            | 当前验证的参数 |
+| {V_NAME}           | 验证器的名字  |
+| {DATA}             | 验证的数据   |
 
 
 
 
 **Verify API**
 
-|方法|介绍|
-|---|---|
-|Verify Verify::registerRule ( array rules)|注册规则, 并且返回实例|
-|bool Verify::checkParams (array request_params, array check_params, &array result)|验证参数|
+| 方法类型 | 方法                                                                         |介绍|
+|------|----------------------------------------------------------------------------|---|
+| 静态   | registerRule ( array rules): Verify                                        |注册规则, 并且返回实例|
+| 实例   | checkParams (array request_params, array check_params, &array result):bool | 验证参数                                |
 

@@ -1,64 +1,38 @@
 <?php
-/**
- *  +-------------+-----------------+-----------+------------------+
- *  |   Author    |      Date       |  version  |   E-mail         |
- *  +-------------+-----------------+-----------+------------------+
- *  |  Tao lifeng | 2018/6/16 17:22 |   1.0     | 742592958@qq.com |
- *  +-------------+-----------------+-----------+------------------+
- *  |                       Abstract                               |
- *  +--------------------------------------------------------------+
- *  |
- *  |   参数验证类
- *  |
- *  +--------------------------------------------------------------+
- */
-
 namespace angletf;
 
 class Verify
 {
 
-    public static $instance = null;
-
-    /**
-     * 用户传入的错误返回规则
-     * @var mixed
-     */
-    protected $verifyError = [];
-
-    /**
-     * 用户传入的默认规则
-     * @var array
-     */
-    protected $verifyDefault = [];
+    public static ?Verify $instance = null;
 
     /**
      * 定义全局验证规则
      * @var array
      */
-    protected $rules = [];
+    protected array $rules = [];
 
 
     /**
      * 当前的错误信息
-     * @var null
+     * @var VerifyError|null
      */
-    protected $currentErrorMessage = null;
+    protected VerifyError|null $verifyError = null;
 
 
     /**
      * 验证器类映射
      * @var array
      */
-    protected $classMap = [];
+    protected array $classMap = [];
 
-    protected $globalVar = [
-        '{V_PARAM}',
+    protected array $globalVar = [
+        '{PARAM}',
         '{V_NAME}',
-        '{V_DATA}',
+        '{DATA}',
     ];
 
-    protected $separator = ',';
+    protected string $separator = ',';
 
     /**
      * Verify constructor.
@@ -72,7 +46,7 @@ class Verify
         foreach ($rules as $name => $rule) {
 
             //检查名字是否具有多参数验证
-            if (strpos($name, $this->separator) !== false) {
+            if (str_contains($name, $this->separator)) {
                 foreach (explode($this->separator, $name) as $new_name) {
                     $this->setRule($new_name, $rule);
                 }
@@ -88,7 +62,7 @@ class Verify
      * @param $rule
      * @throws \Exception
      */
-    public function setRule($name, $rule)
+    public function setRule(string $name, array $rule): void
     {
 
         $name = trim($name);
@@ -97,22 +71,7 @@ class Verify
             return;
         }
 
-        $has_default = false;
-
-        if (!isset($rule['error'])) {
-            throw new \Exception('Missing error configuration item');
-        }
-
-        $this->verifyError[$name] = $rule['error'];
-        unset($rule['error']);
-
-        if (isset($rule['default'])) {
-            $this->verifyDefault[$name] = $rule['default'];
-            $has_default = true;
-            unset($rule['default']);
-        }
-
-        foreach ($rule as $validator => $item) {
+        foreach ($rule as $validator => $attrs) {
 
             $class_name = __NAMESPACE__ . '\validator\\' . ucfirst($validator);
 
@@ -121,15 +80,6 @@ class Verify
             }
 
             $this->classMap[$validator] = $class_name;
-
-            if (!isset($this->verifyError[$name][$validator])) {
-                throw new \Exception("Please set {$name} rule, `{$validator}` error handle");
-            }
-        }
-
-        //检测error.lack参数, 有default参数会忽略lack验证
-        if (!$has_default && !isset($this->verifyError[$name]['lack'])) {
-            throw new \Exception("Please set {$name} rule, `lack` error handle");
         }
 
         $this->rules[$name] = $rule;
@@ -138,10 +88,10 @@ class Verify
     /**
      * 注册规则, 并且返回实例
      * @param array $rules
-     * @return Verify|null
+     * @return Verify
      * @throws \Exception
      */
-    public static function registerRule($rules = [])
+    public static function registerRule(array $rules = []): Verify
     {
         if (is_null(self::$instance)) {
             self::$instance = new self($rules);
@@ -150,74 +100,77 @@ class Verify
     }
 
 
-    public function checkParams($data, $params, &$args, $convert = true)
+    /**
+     * @throws \Exception
+     */
+    public function checkParams(array $data, array $params, &$args): bool
     {
-        $validated = [];
 
+        $validated = [];
         foreach ($params as $param_name) {
 
-            if (!isset($this->rules[$param_name])) {
-                throw new \Exception("Please register the rule for {$param_name}");
+            $rule = $this->rules[$param_name] ?? null;
+            $param_data = $data[$param_name] ?? null;
+
+            if ($rule === null) {
+                throw new \Exception("Please register the rule for `{$param_name}`");
             }
 
-            //如果有默认值
-            if (!isset($data[$param_name]) && isset($this->verifyDefault[$param_name])) {
-                $validated[] = $this->verifyDefault[$param_name];
-                continue;
-            }
+            foreach ($rule as $validator_name => $attrs) {
+                $validator = new $this->classMap[$validator_name];
+                foreach ($attrs as $attr => $v) {
+                    $validator->$attr = $v;
+                }
 
-            if (!isset($data[$param_name])) {
-                $this->currentErrorMessage = $this->injectVar($this->verifyError[$param_name]['lack'], $param_name);
-                return false;
-            }
-
-            foreach ($this->rules[$param_name] as $validator => $rule_value) {
-                if (!$this->classMap[$validator]::check($data[$param_name], $rule_value, $convert)) {
-                    $this->currentErrorMessage = $this->injectVar($this->verifyError[$param_name][$validator], $param_name, $validator, $rule_value);
+                if (!$validator->check($param_data)) {
+                    $this->verifyError = self::createError($param_name, $param_data, $validator_name, $validator);
                     return false;
+                }
+
+                if (!$validator->next()) {
+                    break;
                 }
             }
 
-            $validated[] = $data[$param_name];
+            $validated[] = $param_data;
         }
 
         $args = $validated;
         return true;
     }
 
-    public function injectVar($err_message, $param_name, $validator = null, $rule_value = null)
+    private function replaceVal(string $err_message, array $replace): string
     {
-        if (is_string($err_message)) {
-            return $this->replaceStrVal($err_message, $param_name, $validator, $rule_value);
-        }
-
-        if (is_array($err_message) && isset($err_message[0])) {
-            if (is_string($err_message[0])) {
-                $err_message[0] = $this->replaceStrVal($err_message[0], $param_name, $validator, $rule_value);
-                return $err_message;
-            }
-        }
-
-        return $err_message;
+        return str_replace($this->globalVar, $replace, $err_message);
     }
 
-    public function replaceStrVal($err_message, $param_name, $validator = null, $rule_value = null)
+    public function getError(): ?\Exception
     {
-        return str_replace($this->globalVar, [
-            $param_name,
-            $validator,
-            $rule_value
-        ], $err_message);
+        if ( $this->verifyError === null) return null;
+
+        $err = $this->verifyError->validator->error;
+        if ($err === null) return null;
+
+        $err_message = $this->replaceVal($err->getMessage(), [
+            $this->verifyError->paramName,
+            $this->verifyError->validatorName,
+            $this->verifyError->paramData,
+        ]);
+        return new \Exception($err_message, $err->getCode());
     }
 
-    public function getError()
+    public function getVerifyError(): ?VerifyError
     {
-        return $this->currentErrorMessage;
+        return $this->verifyError;
+    }
+
+    public static function createError($param_name, $param_data, $validator_name, $validator): VerifyError
+    {
+        $err = new VerifyError();
+        $err->paramData = $param_data;
+        $err->paramName = $param_name;
+        $err->validatorName = $validator_name;
+        $err->validator = $validator;
+        return $err;
     }
 }
-
-
-
-
-
-

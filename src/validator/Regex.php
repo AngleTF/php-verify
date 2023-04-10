@@ -4,14 +4,17 @@
 namespace angletf\validator;
 
 use angletf\Check;
+use angletf\Validator;
 
-class Regex implements Check
+class Regex extends Validator implements Check
 {
-    public static function check(&$data, $rule_value, $convert = true)
+    public function check(&$data): bool
     {
-        $match_count = preg_match($rule_value, $data);
+        if ($data === null) return false;
+
+        $match_count = preg_match($this->value, $data);
         if($match_count === false){
-            throw new \Exception("Regex Validator error: pattern => {$rule_value}");
+            throw new \Exception("Regex Validator error: pattern => {$this->value}");
         }
         return $match_count !== 0;
     }
