@@ -6,7 +6,8 @@
     "验证器",
     "http",
     "参数验证",
-    "get,post"
+    "get参数",
+    "post参数"
   ],
   "authors": [
     {
