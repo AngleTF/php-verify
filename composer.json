@@ -1,6 +1,13 @@
 {
   "name": "angletf/php-verify",
-  "description": "php validate form data, support for regex and custom error returns",
+  "description": "php参数验证器, 方便! 好用! 快捷! php validate form data, support for regex and custom error returns",
+  "keywords": [
+    "php",
+    "验证器",
+    "http",
+    "参数验证",
+    "get,post"
+  ],
   "authors": [
     {
       "name": "taolifeng",
