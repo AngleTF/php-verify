@@ -11,10 +11,10 @@ use angletf\Verify;
 
 ### 注册规则&错误
 ```php
-const EType = new Exception("{PARAM}不是正确的类型{V_NAME} 数据: {DATA}", 1);
-const ERequire = new Exception("{PARAM}没有传入", 2);
-const EFormat = new Exception("{PARAM}格式不正确", 3);
-const ELen = new Exception("{PARAM}长度不正确", 4);
+const EType = new Exception("参数类型错误", 1);
+const ERequire = new Exception("参数没有传入", 2);
+const EFormat = new Exception("参数格式不正确", 3);
+const ELen = new Exception("name参数长度不正确", 4);
 
 
 $rule = [
@@ -172,15 +172,6 @@ if (!$instance->checkParams($_POST, ['name', 'age', 'desc'], $args)) {
     return;
 }
 ```
-
-| Exception.message的模板参数 | 介绍      |
-|--------------------|---------|
-| {PARAM}            | 当前验证的参数 |
-| {V_NAME}           | 验证器的名字  |
-| {DATA}             | 验证的数据   |
-
-
-
 
 **Verify API**
 

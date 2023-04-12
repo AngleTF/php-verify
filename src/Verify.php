@@ -148,15 +148,7 @@ class Verify
     {
         if ( $this->verifyError === null) return null;
 
-        $err = $this->verifyError->validator->error;
-        if ($err === null) return null;
-
-        $err_message = $this->replaceVal($err->getMessage(), [
-            $this->verifyError->paramName,
-            $this->verifyError->validatorName,
-            $this->verifyError->paramData,
-        ]);
-        return new \Exception($err_message, $err->getCode());
+        return $this->verifyError->validator->error;
     }
 
     public function getVerifyError(): ?VerifyError
